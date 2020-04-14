@@ -15,6 +15,11 @@ npm install
 npm run dev
 ```
 
+### Upload Permistion
+
+if you want to add images you have to set this Rules in firebase storage:
+<img src="./screenshots/rules.png" />
+
 #### Screenshots:
 
 firebase configuration fields
@@ -26,6 +31,8 @@ on empty
 stastus notifications
 <img src="./screenshots/init fb success.png" />
 
+Add section
+<img src="./screenshots/add.png" />
 
 ---------------
 by zaki
