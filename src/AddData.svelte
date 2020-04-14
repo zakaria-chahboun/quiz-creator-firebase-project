@@ -1,17 +1,28 @@
 <script>
   import { Snackbar, Input, Field, Button, Icon } from "svelma";
 
-  //Question
+  // Questions
   let question = "";
   let question_description = "";
+  let image = [];
 
   // Answers
   let text = "";
   let isCorrect = false;
   let answers = [];
 
+  // Preview
+  let image_preview = "./no image.png"; // just for preview :p
+  $: if (image[0]) {
+    // to preview :p
+    image_preview = URL.createObjectURL(image[0]);
+  }
+
   // Q&A
   let questions_answers = []; // to be send eventually
+  let isLoading = false;
+
+  // ----------- Functions ------------- //
 
   // add answers
   function addAnswer() {
@@ -45,115 +56,167 @@
     questions_answers.splice(index, 1);
     questions_answers = questions_answers;
   }
+
+  function sendToFirebase(){
+
+  }
 </script>
 
-<!-- Add question description -->
-<Field label="Add description">
-  <Input type="textarea" maxlength="200" bind:value={question_description} />
-</Field>
-<br />
+<nav class="navbar" role="navigation" aria-label="main navigation">
+</nav>
 
-<!-- Add question -->
-<Field label="Add question">
-  <Input type="text" bind:value={question} icon="question-circle" />
-</Field>
+<div class="columns is-centered is-vcentered">
+  <div class="column is-7">
 
-<!-- Add answer -->
-<Field>
-  <Input type="text" bind:value={text} icon="list" expanded="true" />
-  <div class="control">
-    <div class="select">
-      <select bind:value={isCorrect}>
-        <option value={false}>false</option>
-        <option value={true}>true</option>
-      </select>
-    </div>
-  </div>
-  <div class="control">
-    <Button type="is-success" on:click={addAnswer}>
-      <Icon icon="plus" />
-    </Button>
-  </div>
-</Field>
+    <!-- Add question description -->
+    <Field label="Add description">
+      <Input
+        type="textarea"
+        maxlength="200"
+        bind:value={question_description} />
+    </Field>
+    <br />
 
-<!-- Answers .. -->
-{#each answers as { text, isCorrect }, i}
-  {#if answers.lenght !== 0}
-    <div class="field has-addons">
+    <!-- Add question -->
+    <Field label="Add question">
+      <Input type="text" bind:value={question} icon="question-circle" />
+    </Field>
+
+    <!-- Add answer -->
+    <Field>
+      <Input type="text" bind:value={text} icon="list" expanded="true" />
       <div class="control">
-        <button class="button is-static">{i + 1}</button>
-      </div>
-      <div class="control is-expanded">
-        <input type="text" class="input " value={text} readonly />
+        <div class="select">
+          <select bind:value={isCorrect}>
+            <option value={false}>false</option>
+            <option value={true}>true</option>
+          </select>
+        </div>
       </div>
       <div class="control">
-        <input type="text" class="input" value={isCorrect} readonly />
+        <Button type="is-success" on:click={addAnswer}>
+          <Icon icon="plus" />
+        </Button>
       </div>
-      <div class="control">
-        <button class="button is-danger" on:click={() => deleteAnswer(i)}>
-          <span class="icon">
-            <i class="fas fa-trash-alt" />
+    </Field>
+
+    <!-- Answers .. -->
+    {#each answers as { text, isCorrect }, i}
+      {#if answers.lenght !== 0}
+        <div class="field has-addons">
+          <div class="control">
+            <button class="button is-static">{i + 1}</button>
+          </div>
+          <div class="control is-expanded">
+            <input type="text" class="input " value={text} readonly />
+          </div>
+          <div class="control">
+            <input type="text" class="input" value={isCorrect} readonly />
+          </div>
+          <div class="control">
+            <button class="button is-danger" on:click={() => deleteAnswer(i)}>
+              <span class="icon">
+                <i class="fas fa-trash-alt" />
+              </span>
+            </button>
+          </div>
+        </div>
+      {/if}
+    {/each}
+
+    <!-- validate (add q and a to list) -->
+    <Field>
+      <Button type="is-success is-fullwidth" on:click={addQ_A}>
+        <Icon icon="check" />
+      </Button>
+    </Field>
+
+    <!-- Show Q&A (stuck :) -->
+    <aside class="menu">
+      {#each questions_answers as q, i}
+        <ul class="menu-list">
+          <!-- show question -->
+          <li>
+            <span class="menu-label">{q.text_question}</span>
+            <a class="delete" on:click={() => deleteQ_A(i)} />
+          </li>
+          <!-- show answers -->
+          <li>
+            {#each q.answers as a, j}
+              <ul>
+                <li>
+                  <div class="field has-addons">
+                    <div class="control">
+                      <button class="button is-static is-small">{j + 1}</button>
+                    </div>
+                    <div class="control is-expanded">
+                      <input
+                        type="text"
+                        class="input is-small"
+                        value={a.text}
+                        readonly />
+                    </div>
+                    <div class="control">
+                      <button class="button is-static is-small">
+                        {#if a.isCorrect}
+                          <span class="icon has-text-success">
+                            <i class="fas fa-thumbs-up" />
+                          </span>
+                        {:else}
+                          <span class="icon">
+                            <i class="fas fa-thumbs-down" />
+                          </span>
+                        {/if}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            {/each}
+          </li>
+        </ul>
+      {:else}
+        <div class="notification has-text-centered">
+          No Questions and Answers Here ..!
+        </div>
+      {/each}
+    </aside>
+
+    <!-- Upload Image -->
+    <label class="label">Add Audio Description</label>
+    <div class="file has-name is-fullwidth">
+      <label class="file-label">
+        <input
+          class="file-input"
+          type="file"
+          bind:files={image}
+          accept=".jpg,.png" />
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-upload" />
           </span>
-        </button>
-      </div>
+          <span class="file-label">Choose an image</span>
+        </span>
+        <span class="file-name">
+          {#if image && image[0]}{image[0].name}{:else}No image to upload{/if}
+        </span>
+      </label>
     </div>
-  {/if}
-{/each}
 
-<!-- validate (add q and a to list) -->
-<Field>
-  <Button type="is-success is-fullwidth" on:click={addQ_A}>
-    <Icon icon="check" />
-  </Button>
-</Field>
+    <!-- Image to preview -->
+    <figure class="image has-image-centered">
+      <img src={image_preview} alt="preview logo image" />
+    </figure>
 
-<!-- Show Q&A (stuck :) -->
-<aside class="menu">
-  {#each questions_answers as q, i}
-    <ul class="menu-list">
-      <!-- show question -->
-      <li>
-        <span class="menu-label">{q.text_question}</span>
-        <a class="delete" on:click={() => deleteQ_A(i)} />
-      </li>
-      <!-- show answers -->
-      <li>
-        {#each q.answers as a, j}
-          <ul>
-            <li>
-              <div class="field has-addons">
-                <div class="control">
-                  <button class="button is-static is-small">{j + 1}</button>
-                </div>
-                <div class="control is-expanded">
-                  <input
-                    type="text"
-                    class="input is-small"
-                    value={a.text}
-                    readonly />
-                </div>
-                <div class="control">
-                  <button class="button is-static is-small">
-                    {#if a.isCorrect}
-                      <span class="icon has-text-success">
-                        <i class="fas fa-thumbs-up" />
-                      </span>
-                    {:else}
-                      <span class="icon">
-                        <i class="fas fa-thumbs-down" />
-                      </span>
-                    {/if}
-                  </button>
-                </div>
-              </div>
-            </li>
-          </ul>
-        {/each}
-      </li>
-    </ul>
-  {:else}
-    <div class="notification has-text-centered">
-      No Questions and Answers Here ..!
-    </div>
-  {/each}
-</aside>
+    <!-- Submit Button -->
+    <Button
+      loading={isLoading}
+      on:click={sendToFirebase}
+      type="is-success is-fullwidth is-medium"
+      iconPack="fa"
+      iconRight="fire">
+      Send !
+    </Button>
+
+  </div>
+</div>
