@@ -1,5 +1,6 @@
 <script>
-  import { Snackbar, Input, Field, Button, Icon } from "svelma";
+  import { Snackbar, Input, Field, Button, Icon, Switch } from "svelma";
+  import { firebase } from "./firebase.js";
 
   // Questions
   let question = "";
@@ -21,6 +22,11 @@
   // Q&A
   let questions_answers = []; // to be send eventually
   let isLoading = false;
+  let include_image = false;
+
+  // Firebase
+  let db = firebase.firestore();
+  let upload = firebase.storage();
 
   // ----------- Functions ------------- //
 
@@ -57,13 +63,89 @@
     questions_answers = questions_answers;
   }
 
-  function sendToFirebase(){
+  async function sendToFirebase() {
+    try {
+      // check if questions & answers not exist: exit
+      if (questions_answers.length <= 0) {
+        throw Error("Questions and Answers are empty!");
+      }
 
+      // check if include image is set to true: exit
+      if (include_image) {
+        // if no image
+        if (!image[0]) {
+          throw Error("Image is empty!");
+        }
+        // get image extenstion
+        let ex = getExtension(image[0].name);
+        // Check File Extension is image : exit
+        if (ex !== "png" && ex !== "jpg" && ex !== "gif") {
+          throw Error("We can accept only '.png .jpg .gif' image format!");
+        }
+      }
+
+      // Start loading circle
+      isLoading = true; // ui/ux
+
+      // Get the doc ID
+      let QuestionID = await db.collection("/quiz").doc().id;
+
+      // Uploading image if exsist
+      if (include_image) {
+        // get image extenstion
+        let ex = getExtension(image[0].name);
+        const metadata_image = {
+          contentType: image[0].type
+        };
+        console.log(ex);
+        
+        await upload
+          .ref()
+          .child(`Images/${QuestionID}.${ex}`)
+          .put(image[0], metadata_image);
+      }
+
+      // Insert doc in firestore
+      await db
+        .collection("/quiz")
+        .doc(`${QuestionID}`)
+        .set({
+          questionsAnswers: questions_answers,
+          textDescription: question_description,
+          image: image[0] ? `Images/${QuestionID}.${getExtension(image[0].name)}` : "null"
+        });
+
+      // Stop loading circle
+      isLoading = false;
+
+      // Send success notification
+      Snackbar.create({
+        message: `Question has been added successfully.`,
+        background: "has-background-success",
+        type: "is-white"
+      });
+    } catch (error) {
+      // Stop loading circle
+      isLoading = false;
+      // Send error notification
+      console.log(error);
+      
+      Snackbar.create({
+        message: `${error.message}`,
+        background: "has-background-danger",
+        type: "is-white"
+      });
+    }
+  }
+
+  // Return Extension of file :)
+  function getExtension(filename) {
+    let fn = filename.split(".").pop();
+    return fn.toLowerCase();
   }
 </script>
 
-<nav class="navbar" role="navigation" aria-label="main navigation">
-</nav>
+<nav class="navbar" role="navigation" aria-label="main navigation" />
 
 <div class="columns is-centered is-vcentered">
   <div class="column is-7">
@@ -203,10 +285,19 @@
       </label>
     </div>
 
+    <!-- Check: Choose to upload image or not -->
+    <Field>
+      <Switch type="is-info" bind:checked={include_image}>
+        Include Image?
+      </Switch>
+    </Field>
+
     <!-- Image to preview -->
-    <figure class="image has-image-centered">
-      <img src={image_preview} alt="preview logo image" />
-    </figure>
+    {#if include_image}
+      <figure class="image has-image-centered">
+        <img src={image_preview} alt="preview logo image" />
+      </figure>
+    {/if}
 
     <!-- Submit Button -->
     <Button

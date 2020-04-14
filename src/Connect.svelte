@@ -14,10 +14,6 @@
     storageBucket: ""
   };
 
-  // Firebase
-  //let db = firebase.firestore();
-  //let upload = firebase.storage();
-
   // When page is loaded: get data from local storage
   onMount(async () => {
     let obj = localStorage.getItem("firebaseData");
